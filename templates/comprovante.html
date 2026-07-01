@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Comprovante - {{ registo.nome }}{% endblock %}
+
+{% block content %}
+    <style>
+        .comprovante { max-width: 480px; margin: 2rem auto; padding: 2rem; border: 2px solid #1e4d8b; }
+        .comprovante h1 { margin-top: 0; color: #1e4d8b; }
+        .comprovante dt { font-weight: 600; margin-top: 0.75rem; }
+        .comprovante dd { margin: 0.25rem 0 0; }
+        @media print { .no-print { display: none; } body { background: #fff; } }
+    </style>
+
+    <div class="comprovante">
+        <h1>STAE — Comprovante de Acesso</h1>
+        <p><strong>Visitante registado com sucesso</strong></p>
+
+        <dl>
+            <dt>Nome</dt>
+            <dd>{{ registo.nome }}</dd>
+            <dt>Identificação</dt>
+            <dd>{{ registo.identificacao }}</dd>
+            <dt>Entrada</dt>
+            <dd>{{ registo.registrado_em }}</dd>
+            {% if registo.eh_familiar %}
+            <dt>Familiar de</dt>
+            <dd>{{ registo.funcionario_visitado }}</dd>
+            {% else %}
+            <dt>Departamento</dt>
+            <dd>{{ registo.departamento }}</dd>
+            <dt>Motivo</dt>
+            <dd>{{ registo.motivo_visita }}</dd>
+            {% endif %}
+            <dt>Operador</dt>
+            <dd>{{ registo.operador_nome }}</dd>
+        </dl>
+
+        <div class="no-print" style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
+            <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+            <a href="{{ url_for('registos.menu') }}" class="btn btn-secondary">Voltar ao menu</a>
+        </div>
+    </div>
+{% endblock %}

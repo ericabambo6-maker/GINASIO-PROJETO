@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Menu - STAE{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Menu de Registos</h1>
+    <p>Registe entradas e saídas de funcionários, estagiários e visitantes.</p>
+</section>
+
+<div class="grid-2">
+    {% if pode_funcionario %}
+    <div class="card">
+        <h2>Funcionário</h2>
+        <p class="card-desc">Cartão de acesso institucional.</p>
+        <form method="POST" action="{{ url_for('registos.registar_funcionario') }}" class="form">
+            <div class="form-group">
+                <label for="func-nome">Nome</label>
+                <input type="text" id="func-nome" name="nome" required>
+            </div>
+            <div class="form-group">
+                <label for="func-id">Nº de identificação (cartão)</label>
+                <input type="text" id="func-id" name="identificacao" required>
+            </div>
+            <div class="form-group">
+                <label for="func-dept">Departamento</label>
+                <input type="text" id="func-dept" name="departamento" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Registar Entrada</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if pode_estagiario %}
+    <div class="card">
+        <h2>Estagiário</h2>
+        <p class="card-desc">Cartão de acesso institucional.</p>
+        <form method="POST" action="{{ url_for('registos.registar_estagiario') }}" class="form">
+            <div class="form-group">
+                <label for="est-nome">Nome</label>
+                <input type="text" id="est-nome" name="nome" required>
+            </div>
+            <div class="form-group">
+                <label for="est-id">Nº de identificação (cartão)</label>
+                <input type="text" id="est-id" name="identificacao" required>
+            </div>
+            <div class="form-group">
+                <label for="est-dept">Departamento</label>
+                <input type="text" id="est-dept" name="departamento" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Registar Entrada</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if pode_visitante %}
+    <div class="card card-wide">
+        <h2>Visitante</h2>
+        <p class="card-desc">Identificação por BI ou Passaporte.</p>
+        <form method="POST" action="{{ url_for('registos.registar_visitante') }}" class="form" id="form-visitante">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="vis-nome">Nome</label>
+                    <input type="text" id="vis-nome" name="nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="vis-id">BI ou Passaporte</label>
+                    <input type="text" id="vis-id" name="identificacao" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>É familiar de algum funcionário?</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="eh_familiar" value="sim" onchange="toggleVisitanteFields()"> Sim
+                    </label>
+                    <label>
+                        <input type="radio" name="eh_familiar" value="nao" checked onchange="toggleVisitanteFields()"> Não
+                    </label>
+                </div>
+            </div>
+            <div id="campos-familiar" class="hidden">
+                <div class="form-group">
+                    <label for="vis-funcionario">Funcionário visitado</label>
+                    <input type="text" id="vis-funcionario" name="funcionario_visitado"
+                           placeholder="Primeiro nome e apelido">
+                </div>
+            </div>
+            <div id="campos-nao-familiar">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vis-motivo">Motivo da visita</label>
+                        <input type="text" id="vis-motivo" name="motivo_visita">
+                    </div>
+                    <div class="form-group">
+                        <label for="vis-dept">Departamento</label>
+                        <input type="text" id="vis-dept" name="departamento">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Registar Visitante</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<section class="card registos-recentes">
+    <div class="section-header">
+        <h2>Registos de Acesso ({{ total }})</h2>
+        {% if pode_exportar %}
+        <a class="btn btn-success"
+           href="{{ url_for('registos.exportar_excel', nome=filtros.nome or '', data=filtros.data or '', tipo=filtros.tipo or '', apenas_dentro=1 if filtros.apenas_dentro else 0) }}">
+            Exportar Excel
+        </a>
+        {% endif %}
+    </div>
+
+    <form method="GET" action="{{ url_for('registos.menu') }}" class="form filtros-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="filtro-nome">Nome</label>
+                <input type="text" id="filtro-nome" name="nome"
+                       value="{{ filtros.nome or '' }}" placeholder="Pesquisar por nome">
+            </div>
+            <div class="form-group">
+                <label for="filtro-data">Data</label>
+                <input type="date" id="filtro-data" name="data" value="{{ filtros.data or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="filtro-tipo">Tipo</label>
+                <select id="filtro-tipo" name="tipo">
+                    <option value="">Todos permitidos</option>
+                    {% if 'Funcionario' in tipos_filtro %}
+                    <option value="Funcionario" {% if filtros.tipo == 'Funcionario' %}selected{% endif %}>Funcionário</option>
+                    {% endif %}
+                    {% if 'Estagiario' in tipos_filtro %}
+                    <option value="Estagiario" {% if filtros.tipo == 'Estagiario' %}selected{% endif %}>Estagiário</option>
+                    {% endif %}
+                    {% if 'Visitante' in tipos_filtro %}
+                    <option value="Visitante" {% if filtros.tipo == 'Visitante' %}selected{% endif %}>Visitante</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="filtro-dentro">Estado</label>
+                <select id="filtro-dentro" name="apenas_dentro">
+                    <option value="0" {% if not filtros.apenas_dentro %}selected{% endif %}>Todos</option>
+                    <option value="1" {% if filtros.apenas_dentro %}selected{% endif %}>Ainda dentro</option>
+                </select>
+            </div>
+        </div>
+        <div class="filtros-actions">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a href="{{ url_for('registos.menu') }}" class="btn btn-secondary">Limpar</a>
+        </div>
+    </form>
+
+    {% if registos %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Entrada</th>
+                    <th>Saída</th>
+                    <th>Tipo</th>
+                    <th>Nome</th>
+                    <th>Identificação</th>
+                    <th>Detalhes</th>
+                    <th>Operador</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registos %}
+                <tr>
+                    <td>{{ r.registrado_em }}</td>
+                    <td>{{ r.saida_em or '—' }}</td>
+                    <td><span class="tag tag-{{ r.tipo|lower }}">{{ r.tipo }}</span></td>
+                    <td>{{ r.nome }}</td>
+                    <td>{{ r.identificacao }}</td>
+                    <td>
+                        {% if r.tipo == 'Visitante' and r.eh_familiar %}
+                            Familiar de {{ r.funcionario_visitado }}
+                        {% elif r.departamento %}
+                            Dept: {{ r.departamento }}
+                            {% if r.motivo_visita %} — {{ r.motivo_visita }}{% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ r.operador_nome }}</td>
+                    <td class="actions-cell">
+                        {% if pode_saida and not r.saida_em %}
+                        <form method="POST" action="{{ url_for('registos.registar_saida_route', registo_id=r.id) }}" class="inline-form">
+                            <button type="submit" class="btn btn-secondary btn-sm">Saída</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_paginas > 1 %}
+    <div class="pagination">
+        {% if pagina > 1 %}
+        <a href="{{ url_for('registos.menu', pagina=pagina-1, nome=filtros.nome or '', data=filtros.data or '', tipo=filtros.tipo or '', apenas_dentro=1 if filtros.apenas_dentro else 0) }}">Anterior</a>
+        {% endif %}
+        <span>Página {{ pagina }} de {{ total_paginas }}</span>
+        {% if pagina < total_paginas %}
+        <a href="{{ url_for('registos.menu', pagina=pagina+1, nome=filtros.nome or '', data=filtros.data or '', tipo=filtros.tipo or '', apenas_dentro=1 if filtros.apenas_dentro else 0) }}">Próxima</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="empty-state">Nenhum registo encontrado para os filtros selecionados.</p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleVisitanteFields() {
+    const ehFamiliar = document.querySelector('input[name="eh_familiar"]:checked').value === 'sim';
+    const camposFamiliar = document.getElementById('campos-familiar');
+    const camposNaoFamiliar = document.getElementById('campos-nao-familiar');
+    if (camposFamiliar) camposFamiliar.classList.toggle('hidden', !ehFamiliar);
+    if (camposNaoFamiliar) camposNaoFamiliar.classList.toggle('hidden', ehFamiliar);
+    const visFunc = document.getElementById('vis-funcionario');
+    const visMotivo = document.getElementById('vis-motivo');
+    const visDept = document.getElementById('vis-dept');
+    if (visFunc) visFunc.required = ehFamiliar;
+    if (visMotivo) visMotivo.required = !ehFamiliar;
+    if (visDept) visDept.required = !ehFamiliar;
+}
+if (document.getElementById('form-visitante')) toggleVisitanteFields();
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - STAE{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Dashboard</h1>
+    <p>Resumo dos acessos do STAE.</p>
+</section>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-label">Hoje</span>
+        <strong class="stat-value">{{ stats.total_hoje }}</strong>
+        <span class="stat-hint">entradas registadas</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Dentro agora</span>
+        <strong class="stat-value">{{ stats.dentro_agora }}</strong>
+        <span class="stat-hint">sem saída registada</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Este mês</span>
+        <strong class="stat-value">{{ stats.total_mes }}</strong>
+        <span class="stat-hint">total de acessos</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Total geral</span>
+        <strong class="stat-value">{{ stats.total_geral }}</strong>
+        <span class="stat-hint">desde o início</span>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Hoje por tipo</h2>
+    <div class="stats-row">
+        <div><span class="tag tag-funcionario">Funcionários</span> {{ stats.funcionarios_hoje }}</div>
+        <div><span class="tag tag-estagiario">Estagiários</span> {{ stats.estagiarios_hoje }}</div>
+        <div><span class="tag tag-visitante">Visitantes</span> {{ stats.visitantes_hoje }}</div>
+    </div>
+</div>
+
+{% if session.operador_tipo == 'Admin' %}
+<div class="card">
+    <h2>Manutenção</h2>
+    <p class="card-desc">Criar cópia de segurança da base de dados.</p>
+    <a href="{{ url_for('admin.backup') }}" class="btn btn-secondary">Criar Backup da BD</a>
+</div>
+{% endif %}
+{% endblock %}

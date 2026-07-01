@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - STAE{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Logs do Sistema</h1>
+    <p>Auditoria de ações dos operadores ({{ total }} registos).</p>
+</section>
+
+<div class="card registos-recentes">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Operador</th>
+                    <th>Ação</th>
+                    <th>Detalhes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.criado_em }}</td>
+                    <td>{{ log.operador_nome or '—' }}</td>
+                    <td><span class="tag">{{ log.acao }}</span></td>
+                    <td>{{ log.detalhes or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_paginas > 1 %}
+    <div class="pagination">
+        {% if pagina > 1 %}
+        <a href="{{ url_for('admin.logs', pagina=pagina-1) }}">Anterior</a>
+        {% endif %}
+        <span>Página {{ pagina }} de {{ total_paginas }}</span>
+        {% if pagina < total_paginas %}
+        <a href="{{ url_for('admin.logs', pagina=pagina+1) }}">Próxima</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

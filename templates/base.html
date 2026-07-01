@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}STAE - Controlo de Acessos{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <div class="brand">
+                <span class="brand-mark">STAE</span>
+                <span class="brand-text">Controlo de Acessos</span>
+            </div>
+            {% if session.get('operador_nome') %}
+            <nav class="nav-links">
+                <a href="{{ url_for('registos.menu') }}">Registos</a>
+                {% if session.operador_tipo == 'Admin' %}
+                <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('admin.operadores') }}">Operadores</a>
+                <a href="{{ url_for('admin.logs') }}">Logs</a>
+                {% endif %}
+                <a href="{{ url_for('admin.alterar_senha') }}">Senha</a>
+            </nav>
+            <div class="user-info">
+                <span>{{ session.operador_nome }}</span>
+                <span class="badge">{{ session.operador_tipo }}</span>
+                <a class="btn btn-outline btn-sm" href="{{ url_for('auth.logout') }}">Sair</a>
+            </div>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="container main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alerts">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Sistema de Controlo de Acessos STAE &mdash; Desenvolvido por Érica Bambo</p>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

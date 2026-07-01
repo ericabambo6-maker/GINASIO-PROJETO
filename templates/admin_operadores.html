@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Operadores - STAE{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Gestão de Operadores</h1>
+    <p>Criar e editar contas de operadores do sistema.</p>
+</section>
+
+<div class="card">
+    <h2>Novo operador</h2>
+    <form method="POST" action="{{ url_for('admin.criar_operador_route') }}" class="form">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Nome</label>
+                <input type="text" name="nome" required>
+            </div>
+            <div class="form-group">
+                <label>Utilizador</label>
+                <input type="text" name="usuario" required>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" name="senha" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label>Tipo</label>
+                <select name="tipo" required>
+                    {% for t in tipos_operador %}
+                    <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Criar operador</button>
+    </form>
+</div>
+
+<div class="card registos-recentes">
+    <h2>Operadores existentes</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Utilizador</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Criado</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for op in operadores %}
+                <tr>
+                    <td>{{ op.nome }}</td>
+                    <td>{{ op.usuario }}</td>
+                    <td>{{ op.tipo }}</td>
+                    <td>{{ 'Ativo' if op.ativo else 'Inativo' }}</td>
+                    <td>{{ op.criado_em }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.editar_operador_route', operador_id=op.id) }}" class="inline-form">
+                            <input type="hidden" name="nome" value="{{ op.nome }}">
+                            <input type="hidden" name="usuario" value="{{ op.usuario }}">
+                            <input type="hidden" name="tipo" value="{{ op.tipo }}">
+                            <input type="hidden" name="ativo" value="{{ 0 if op.ativo else 1 }}">
+                            <button type="submit" class="btn btn-secondary btn-sm">
+                                {{ 'Desativar' if op.ativo else 'Ativar' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
