@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: stae-sistema
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: STAE_SECRET_KEY
+        generateValue: true
+      - key: STAE_DEBUG
+        value: false
+      - key: STAE_HOST
+        value: 0.0.0.0
+      - key: STAE_PORT
+        value: 5000

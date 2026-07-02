@@ -13,8 +13,27 @@ PERMISSOES = {
         "backup",
         "alterar_senha",
         "comprovante",
+        "menu_funcionario",
+        "menu_estagiario",
+        "menu_visitante",
+        "registar_saida",
+    },
+    "Supervisor": {
+        "exportar",
+        "dashboard",
+        "gerir_operadores",
+        "ver_logs",
+        "backup",
+        "alterar_senha",
+        "comprovante",
+        "menu_funcionario",
+        "menu_estagiario",
+        "menu_visitante",
+        "registar_saida",
     },
     "RH": {
+        "menu_funcionario",
+        "menu_estagiario",
         "alterar_senha",
     },
     "Policia": {
@@ -33,4 +52,13 @@ def tem_permissao(tipo_operador, permissao):
 
 
 def tipos_registo_permitidos(tipo_operador):
-    return ["Funcionario", "Estagiario", "Visitante"]
+    # Polícia pode registrar todos os tipos
+    if tipo_operador == "Policia":
+        return ["Funcionario", "Estagiario", "Visitante"]
+    # RH pode registrar funcionários e estagiários
+    if tipo_operador == "RH":
+        return ["Funcionario", "Estagiario"]
+    # Admin e Supervisor podem registrar todos
+    if tipo_operador in ["Admin", "Supervisor"]:
+        return ["Funcionario", "Estagiario", "Visitante"]
+    return []

@@ -1,7 +1,7 @@
 from flask import Blueprint, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
-from app.database import get_operador_por_usuario, registrar_log
+from app.backend import get_operador_por_usuario, registrar_log
 from app.utils.rate_limit import esta_bloqueado, limpar_falhas, registar_falha
 
 auth_bp = Blueprint("auth", __name__)

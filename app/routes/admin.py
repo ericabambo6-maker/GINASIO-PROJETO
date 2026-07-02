@@ -3,7 +3,7 @@ from math import ceil
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
-from app.database import (
+from app.backend import (
     alterar_senha_operador,
     atualizar_operador,
     contar_logs,

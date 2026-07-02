@@ -1,0 +1,4 @@
+DATABASE_URL=postgresql://postgres:Cessy.Maker1@db.inszsbbflhizvvqrxmpm.supabase.co:6543/postgres
+SUPABASE_URL=https://inszsbbflhizvvqrxmpm.supabase.co
+SUPABASE_KEY=sb_publishable_JBbqs3BkNzahVNxLrQvdtw_gfXhbt50
+STAE_DB_URL=sqlite:///stae.db

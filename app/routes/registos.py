@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
 from openpyxl import Workbook
 
-from app.database import (
+from app.backend import (
     contar_registos,
     get_registo_por_id,
     inserir_registo,

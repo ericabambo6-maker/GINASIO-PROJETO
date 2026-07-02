@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 
-from app.database import init_db
+from app.backend import init_db
 from config import DEBUG, SECRET_KEY
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
