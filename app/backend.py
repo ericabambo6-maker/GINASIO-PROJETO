@@ -1,3 +1,4 @@
+import base64
 import os
 import sqlite3
 from contextlib import contextmanager
@@ -6,7 +7,7 @@ from importlib import import_module
 
 from werkzeug.security import generate_password_hash
 
-from config import DATABASE_PATH, DEMO_ACCOUNTS
+from config import DATABASE_PATH, DEMO_ACCOUNTS, UPLOAD_DIR
 
 try:
     import psycopg2
@@ -339,12 +340,39 @@ def alterar_senha_operador(operador_id, nova_senha):
             cursor.execute(f"UPDATE operadores SET senha_hash = {param} WHERE id = {param}", (generate_password_hash(nova_senha), operador_id))
 
 
+def _save_base64_image(base64_string, registo_id):
+    """Save base64 image to file and return the file path."""
+    if not base64_string:
+        return None
+    
+    # Remove data URL prefix if present
+    if base64_string.startswith("data:image"):
+        base64_string = base64_string.split(",", 1)[1]
+    
+    # Decode base64
+    image_data = base64.b64decode(base64_string)
+    
+    # Generate filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"doc_{registo_id}_{timestamp}.jpg"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    
+    # Save to file
+    with open(filepath, "wb") as f:
+        f.write(image_data)
+    
+    # Return relative path for database storage (without uploads/ prefix since route handles it)
+    return f"documentos/{filename}"
+
+
 def inserir_registo(dados):
     with BACKEND.get_db() as conn:
         with conn.cursor() as cursor:
             try:
                 param = "?" if BACKEND.kind == "sqlite" else "%s"
                 params = "".join([f"{param}, " for _ in range(16)]) + param
+                
+                # First insert without photo to get the ID
                 cursor.execute(
                     f"""
                     INSERT INTO registos_acesso (
@@ -368,18 +396,34 @@ def inserir_registo(dados):
                         dados.get("valores_monetarios"),
                         dados.get("seguranca_armas", "Nenhuma Arma Detetada"),
                         dados.get("substancias_retidas"),
-                        dados.get("foto_base64"),
+                        None,  # Will be updated after getting ID
                         int(dados.get("eh_familiar", 0)),
                         dados.get("funcionario_visitado"),
                         dados["operador_id"],
                     ),
                 )
-                print("Inserção realizada com sucesso!")
+                
+                # Get the registo_id
                 if BACKEND.kind == "sqlite":
-                    return cursor.lastrowid
+                    registo_id = cursor.lastrowid
                 else:
                     cursor.execute("SELECT lastval()")
-                    return cursor.fetchone()["lastval"]
+                    registo_id = cursor.fetchone()["lastval"]
+                
+                # Save photo if provided
+                foto_path = None
+                if dados.get("foto_base64"):
+                    foto_path = _save_base64_image(dados["foto_base64"], registo_id)
+                
+                # Update the record with photo path
+                if foto_path:
+                    cursor.execute(
+                        f"UPDATE registos_acesso SET foto_documento = {param} WHERE id = {param}",
+                        (foto_path, registo_id)
+                    )
+                
+                print("Inserção realizada com sucesso!")
+                return registo_id
             except Exception as e:
                 print(f"ERRO AO INSERIR: {e}")
                 raise e
