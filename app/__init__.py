@@ -14,6 +14,8 @@ def create_app():
         template_folder=os.path.join(BASE_DIR, "templates"),
         static_folder=os.path.join(BASE_DIR, "static"),
     )
+    import os
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///stae.db")
     app.config["SECRET_KEY"] = SECRET_KEY
     app.config["DEBUG"] = DEBUG
 
