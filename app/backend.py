@@ -14,13 +14,20 @@ try:
     PSYCOPG2_AVAILABLE = True
 except ImportError:
     PSYCOPG2_AVAILABLE = False
-
+class Backend:
+    def __init__(self):
+        # Aqui podes definir o kind com segurança
+        self.kind = os.getenv("DB_KIND", "sqlite")
+        
+    def get_connection(self):
+        # Agora o "os" está disponível aqui dentro porque foi importado no topo
+        if self.kind == "supabase":
 create_client = None
 try:
     create_client = import_module("supabase").create_client
 except Exception:  # pragma: no cover - depende da instalação do pacote
     create_client = None
-
+pass
 
 class SQLiteCursorWrapper:
     def __init__(self, cursor):
