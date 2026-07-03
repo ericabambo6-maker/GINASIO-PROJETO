@@ -89,6 +89,7 @@ def menu():
         pode_saida=tem_permissao(session.get("operador_tipo"), "registar_saida"),
         pode_comprovante=tem_permissao(session.get("operador_tipo"), "comprovante"),
         tipos_filtro=tipos_registo_permitidos(session.get("operador_tipo")),
+        pode_ver_detalhes=tem_permissao(session.get("operador_tipo"), "ver_detalhes_registo"),
     )
 
 
@@ -286,6 +287,7 @@ def registar_visitante():
 
     dados = {
         "tipo": "Visitante", "nome": nome, "identificacao": identificacao,
+        "tipo_documento": request.form.get("tipo_documento", "BI"),
         "eh_familiar": 1 if eh_familiar else 0, "operador_id": session["operador_id"],
     }
 

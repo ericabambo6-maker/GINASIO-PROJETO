@@ -3,9 +3,11 @@ import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 BACKUP_DIR = os.path.join(DATA_DIR, "backups")
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "documentos")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(BACKUP_DIR, exist_ok=True)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 SECRET_KEY = os.environ.get("STAE_SECRET_KEY", "stae-dev-key-alterar-em-producao")
 DEBUG = os.environ.get("STAE_DEBUG", "false").lower() in ("1", "true", "yes")

@@ -13,10 +13,7 @@ PERMISSOES = {
         "backup",
         "alterar_senha",
         "comprovante",
-        "menu_funcionario",
-        "menu_estagiario",
-        "menu_visitante",
-        "registar_saida",
+        "ver_detalhes_registo",
     },
     "Supervisor": {
         "exportar",
@@ -26,6 +23,7 @@ PERMISSOES = {
         "backup",
         "alterar_senha",
         "comprovante",
+        "ver_detalhes_registo",
     },
     "RH": {
         "menu_funcionario",

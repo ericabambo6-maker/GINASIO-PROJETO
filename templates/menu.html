@@ -9,6 +9,23 @@
 </section>
 
 <div class="grid-2">
+    {% if operador_tipo == 'Admin' %}
+    <div class="card">
+        <h2>Dashboard</h2>
+        <p class="card-desc">Estatísticas e resumo do sistema.</p>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">Ver Dashboard</a>
+    </div>
+    <div class="card">
+        <h2>Gestão de Operadores</h2>
+        <p class="card-desc">Gerir contas de utilizadores.</p>
+        <a href="{{ url_for('admin.operadores') }}" class="btn btn-primary">Gerir Operadores</a>
+    </div>
+    <div class="card">
+        <h2>Logs do Sistema</h2>
+        <p class="card-desc">Ver histórico de ações.</p>
+        <a href="{{ url_for('admin.logs') }}" class="btn btn-primary">Ver Logs</a>
+    </div>
+    {% else %}
     {% if pode_funcionario %}
     <div class="card">
         <h2>Funcionário</h2>
@@ -64,10 +81,17 @@
                     <input type="text" id="vis-nome" name="nome" required>
                 </div>
                 <div class="form-group">
-                    <label for="vis-id">BI ou Passaporte</label>
-                    <input type="text" id="vis-id" name="identificacao" required oninput="autocompleteVisitante(this.value)">
-                    <div id="autocomplete-results" class="autocomplete-results"></div>
+                    <label for="vis-tipo-doc">Tipo de Documento</label>
+                    <select id="vis-tipo-doc" name="tipo_documento">
+                        <option value="BI" selected>BI</option>
+                        <option value="Passaporte">Passaporte</option>
+                    </select>
                 </div>
+            </div>
+            <div class="form-group">
+                <label for="vis-id">Número do Documento</label>
+                <input type="text" id="vis-id" name="identificacao" required oninput="autocompleteVisitante(this.value)">
+                <div id="autocomplete-results" class="autocomplete-results"></div>
             </div>
             <div class="form-group">
                 <label>Foto do Documento</label>
@@ -157,6 +181,7 @@
         </form>
     </div>
     {% endif %}
+    {% endif %}
 </div>
 
 <section class="card registos-recentes">
@@ -227,7 +252,7 @@
             </thead>
             <tbody>
                 {% for r in registos %}
-                <tr data-registo-id="{{ r.id }}" style="cursor: pointer;" class="clickable-row">
+                <tr {% if pode_ver_detalhes %}data-registo-id="{{ r.id }}" style="cursor: pointer;" class="clickable-row"{% endif %}>
                     <td>{{ r.registrado_em }}</td>
                     <td>{{ r.saida_em or '—' }}</td>
                     <td><span class="tag tag-{{ r.tipo|lower }}">{{ r.tipo }}</span></td>
@@ -411,11 +436,23 @@ function showRegistoModal(registoId) {
     fetch(`/api/registo/${registoId}`)
         .then(response => response.json())
         .then(data => {
+            let fotoHtml = '';
+            if (data.foto_documento) {
+                fotoHtml = `
+                    <div class="form-group">
+                        <label>Foto do Documento</label>
+                        <img src="/documentos/${data.foto_documento.split('/').pop()}" alt="Foto do documento" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border);">
+                    </div>
+                `;
+            }
+            
             modalBody.innerHTML = `
                 <div class="registo-details">
+                    ${fotoHtml}
                     <p><strong>ID:</strong> ${data.id}</p>
                     <p><strong>Tipo:</strong> ${data.tipo}</p>
                     <p><strong>Nome:</strong> ${data.nome}</p>
+                    <p><strong>Tipo Documento:</strong> ${data.tipo_documento || 'BI'}</p>
                     <p><strong>Identificação:</strong> ${data.identificacao}</p>
                     <p><strong>Entrada:</strong> ${data.registrado_em}</p>
                     <p><strong>Saída:</strong> ${data.saida_em || '—'}</p>

@@ -1,9 +1,9 @@
 import os
 
-from flask import Flask
+from flask import Flask, send_from_directory
 
 from app.backend import init_db
-from config import DEBUG, SECRET_KEY
+from config import DEBUG, SECRET_KEY, UPLOAD_DIR
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -27,5 +27,20 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(registos_bp)
     app.register_blueprint(admin_bp)
+
+    # Serve uploaded files
+    @app.route('/uploads/<path:filename>')
+    def serve_upload(filename):
+        return send_from_directory(os.path.join(BASE_DIR, 'uploads'), filename)
+    
+    # Serve uploaded files at root level for compatibility
+    @app.route('/documentos/<path:filename>')
+    def serve_documentos(filename):
+        # For production, we'll use Supabase Storage
+        # For now, serve from local directory
+        try:
+            return send_from_directory(UPLOAD_DIR, filename)
+        except FileNotFoundError:
+            return "Foto não encontrada", 404
 
     return app
