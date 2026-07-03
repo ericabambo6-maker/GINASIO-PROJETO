@@ -65,7 +65,22 @@
                 </div>
                 <div class="form-group">
                     <label for="vis-id">BI ou Passaporte</label>
-                    <input type="text" id="vis-id" name="identificacao" required>
+                    <input type="text" id="vis-id" name="identificacao" required oninput="autocompleteVisitante(this.value)">
+                    <div id="autocomplete-results" class="autocomplete-results"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Foto do Documento</label>
+                <div class="webcam-container">
+                    <video id="webcam" autoplay playsinline></video>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                    <img id="photo-preview" style="display:none; max-width: 100%; margin-top: 10px;">
+                    <div class="webcam-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="startWebcam()">Iniciar Câmera</button>
+                        <button type="button" class="btn btn-primary" onclick="capturePhoto()" id="capture-btn" disabled>Capturar Foto</button>
+                        <button type="button" class="btn btn-secondary" onclick="retakePhoto()" id="retake-btn" style="display:none;">Tirar Novamente</button>
+                    </div>
+                    <input type="hidden" id="foto-base64" name="foto_base64">
                 </div>
             </div>
             <div class="form-group">
@@ -96,6 +111,46 @@
                         <label for="vis-dept">Departamento</label>
                         <input type="text" id="vis-dept" name="departamento">
                     </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vis-proveniencia">Proveniência (empresa/entidade)</label>
+                        <input type="text" id="vis-proveniencia" name="proveniencia" placeholder="Nome da empresa ou entidade">
+                    </div>
+                    <div class="form-group">
+                        <label for="vis-contacto-visitante">Contacto do visitante</label>
+                        <input type="text" id="vis-contacto-visitante" name="contacto_visitante" placeholder="Telefone ou email">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vis-contacto-visitado">Contacto do funcionário visitado</label>
+                        <input type="text" id="vis-contacto-visitado" name="contacto_visitado" placeholder="Telefone ou email">
+                    </div>
+                    <div class="form-group">
+                        <label for="vis-funcionario">Funcionário visitado</label>
+                        <input type="text" id="vis-funcionario" name="funcionario_visitado" placeholder="Primeiro nome e apelido">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="vis-bens">Declaração de bens (tipo e valor)</label>
+                    <input type="text" id="vis-bens" name="bens_declarados" placeholder="Ex: Laptop, Telemóvel, etc.">
+                </div>
+                <div class="form-group">
+                    <label for="vis-valores">Valores monetários</label>
+                    <input type="text" id="vis-valores" name="valores_monetarios" placeholder="Ex: 5000 AOA">
+                </div>
+                <div class="form-group">
+                    <label for="vis-armas">Segurança - Armas detetadas</label>
+                    <select id="vis-armas" name="seguranca_armas">
+                        <option value="Nenhuma Arma Detetada" selected>Nenhuma Arma Detetada</option>
+                        <option value="Arma de Fogo Detetada">Arma de Fogo Detetada</option>
+                        <option value="Arma Branca Detetada">Arma Branca Detetada</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="vis-substancias">Substâncias retidas</label>
+                    <input type="text" id="vis-substancias" name="substancias_retidas" placeholder="Ex: Nenhuma">
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">Registar Visitante</button>
@@ -172,7 +227,7 @@
             </thead>
             <tbody>
                 {% for r in registos %}
-                <tr>
+                <tr data-registo-id="{{ r.id }}" style="cursor: pointer;" class="clickable-row">
                     <td>{{ r.registrado_em }}</td>
                     <td>{{ r.saida_em or '—' }}</td>
                     <td><span class="tag tag-{{ r.tipo|lower }}">{{ r.tipo }}</span></td>
@@ -187,7 +242,7 @@
                         {% else %}—{% endif %}
                     </td>
                     <td>{{ r.operador_nome }}</td>
-                    <td class="actions-cell">
+                    <td class="actions-cell" onclick="event.stopPropagation()">
                         {% if pode_saida and not r.saida_em %}
                         <form method="POST" action="{{ url_for('registos.registar_saida_route', registo_id=r.id) }}" class="inline-form">
                             <button type="submit" class="btn btn-secondary btn-sm">Saída</button>
@@ -215,10 +270,65 @@
     <p class="empty-state">Nenhum registo encontrado para os filtros selecionados.</p>
     {% endif %}
 </section>
+
+<!-- Modal for registo details -->
+<div id="registo-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Detalhes do Registo</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body">
+            <!-- Content loaded dynamically -->
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+let stream = null;
+let autocompleteTimeout = null;
+
+function autocompleteVisitante(value) {
+    const resultsDiv = document.getElementById('autocomplete-results');
+    
+    clearTimeout(autocompleteTimeout);
+    
+    if (value.length < 3) {
+        resultsDiv.innerHTML = '';
+        return;
+    }
+    
+    autocompleteTimeout = setTimeout(() => {
+        fetch(`/api/visitante/autocomplete?identificacao=${encodeURIComponent(value)}`)
+            .then(response => response.json())
+            .then(data => {
+                resultsDiv.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(visitor => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-item';
+                        div.textContent = `${visitor.identificacao} - ${visitor.nome}`;
+                        div.onclick = () => fillVisitorData(visitor);
+                        resultsDiv.appendChild(div);
+                    });
+                }
+            })
+            .catch(err => console.error('Autocomplete error:', err));
+    }, 300);
+}
+
+function fillVisitorData(visitor) {
+    document.getElementById('vis-id').value = visitor.identificacao;
+    document.getElementById('vis-nome').value = visitor.nome;
+    document.getElementById('vis-proveniencia').value = visitor.proveniencia;
+    document.getElementById('vis-contacto-visitante').value = visitor.contacto_visitante;
+    document.getElementById('vis-dept').value = visitor.departamento;
+    document.getElementById('vis-motivo').value = visitor.motivo_visita;
+    document.getElementById('autocomplete-results').innerHTML = '';
+}
+
 function toggleVisitanteFields() {
     const ehFamiliar = document.querySelector('input[name="eh_familiar"]:checked').value === 'sim';
     const camposFamiliar = document.getElementById('campos-familiar');
@@ -232,6 +342,113 @@ function toggleVisitanteFields() {
     if (visMotivo) visMotivo.required = !ehFamiliar;
     if (visDept) visDept.required = !ehFamiliar;
 }
+
+async function startWebcam() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const video = document.getElementById('webcam');
+        video.srcObject = stream;
+        document.getElementById('capture-btn').disabled = false;
+    } catch (err) {
+        alert('Erro ao acessar câmera: ' + err.message);
+    }
+}
+
+function capturePhoto() {
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const photoPreview = document.getElementById('photo-preview');
+    const fotoBase64 = document.getElementById('foto-base64');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    photoPreview.src = dataUrl;
+    photoPreview.style.display = 'block';
+    fotoBase64.value = dataUrl;
+    
+    video.style.display = 'none';
+    document.getElementById('capture-btn').style.display = 'none';
+    document.getElementById('retake-btn').style.display = 'inline-block';
+    
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+}
+
+function retakePhoto() {
+    const video = document.getElementById('webcam');
+    const photoPreview = document.getElementById('photo-preview');
+    
+    photoPreview.style.display = 'none';
+    video.style.display = 'block';
+    document.getElementById('capture-btn').style.display = 'inline-block';
+    document.getElementById('retake-btn').style.display = 'none';
+    document.getElementById('foto-base64').value = '';
+    
+    startWebcam();
+}
+
 if (document.getElementById('form-visitante')) toggleVisitanteFields();
+
+// Add click handlers for table rows
+document.querySelectorAll('.clickable-row').forEach(row => {
+    row.addEventListener('click', function() {
+        const registoId = this.getAttribute('data-registo-id');
+        showRegistoModal(registoId);
+    });
+});
+
+function showRegistoModal(registoId) {
+    const modal = document.getElementById('registo-modal');
+    const modalBody = document.getElementById('modal-body');
+    
+    modalBody.innerHTML = '<p>A carregar...</p>';
+    modal.style.display = 'flex';
+    
+    fetch(`/api/registo/${registoId}`)
+        .then(response => response.json())
+        .then(data => {
+            modalBody.innerHTML = `
+                <div class="registo-details">
+                    <p><strong>ID:</strong> ${data.id}</p>
+                    <p><strong>Tipo:</strong> ${data.tipo}</p>
+                    <p><strong>Nome:</strong> ${data.nome}</p>
+                    <p><strong>Identificação:</strong> ${data.identificacao}</p>
+                    <p><strong>Entrada:</strong> ${data.registrado_em}</p>
+                    <p><strong>Saída:</strong> ${data.saida_em || '—'}</p>
+                    ${data.departamento ? `<p><strong>Departamento:</strong> ${data.departamento}</p>` : ''}
+                    ${data.motivo_visita ? `<p><strong>Motivo:</strong> ${data.motivo_visita}</p>` : ''}
+                    ${data.proveniencia ? `<p><strong>Proveniência:</strong> ${data.proveniencia}</p>` : ''}
+                    ${data.contacto_visitante ? `<p><strong>Contacto Visitante:</strong> ${data.contacto_visitante}</p>` : ''}
+                    ${data.contacto_visitado ? `<p><strong>Contacto Visitado:</strong> ${data.contacto_visitado}</p>` : ''}
+                    ${data.funcionario_visitado ? `<p><strong>Funcionário Visitado:</strong> ${data.funcionario_visitado}</p>` : ''}
+                    ${data.bens_declarados ? `<p><strong>Bens Declarados:</strong> ${data.bens_declarados}</p>` : ''}
+                    ${data.valores_monetarios ? `<p><strong>Valores Monetários:</strong> ${data.valores_monetarios}</p>` : ''}
+                    ${data.seguranca_armas ? `<p><strong>Segurança:</strong> ${data.seguranca_armas}</p>` : ''}
+                    ${data.substancias_retidas ? `<p><strong>Substâncias Retidas:</strong> ${data.substancias_retidas}</p>` : ''}
+                    ${data.eh_familiar ? `<p><strong>É Familiar:</strong> Sim</p>` : ''}
+                    <p><strong>Operador:</strong> ${data.operador_nome} (${data.operador_tipo})</p>
+                </div>
+            `;
+        })
+        .catch(err => {
+            modalBody.innerHTML = '<p>Erro ao carregar detalhes.</p>';
+            console.error('Error loading registo:', err);
+        });
+}
+
+function closeModal() {
+    document.getElementById('registo-modal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.getElementById('registo-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
 </script>
 {% endblock %}

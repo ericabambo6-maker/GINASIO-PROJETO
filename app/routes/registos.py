@@ -2,7 +2,7 @@ from io import BytesIO
 from math import ceil
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from openpyxl import Workbook
 
 from app.backend import (
@@ -13,6 +13,7 @@ from app.backend import (
     listar_todos_registos,
     registrar_log,
     registrar_saida,
+    listar_registos_recentes,
 )
 from app.utils.permissions import tem_permissao, tipos_registo_permitidos
 from app.utils.validators import validar_departamento, validar_identificacao, validar_nome
@@ -233,6 +234,42 @@ def registar_estagiario():
     return redirect(url_for("registos.menu"))
 
 
+@registos_bp.route("/api/registo/<int:registo_id>")
+def api_registo_detalhes(registo_id):
+    redirecionar = _requer_login()
+    if redirecionar:
+        return redirecionar
+    
+    registo = get_registo_por_id(registo_id)
+    if not registo:
+        return jsonify({"error": "Registo não encontrado"}), 404
+    
+    return jsonify(registo)
+
+
+@registos_bp.route("/api/visitante/autocomplete")
+def autocomplete_visitante():
+    redirecionar = _requer_login()
+    if redirecionar:
+        return redirecionar
+    
+    identificacao = request.args.get("identificacao", "").strip()
+    if not identificacao or len(identificacao) < 3:
+        return jsonify([])
+    
+    registos = listar_registos_recentes(limite=50)
+    visitantes = [r for r in registos if r["tipo"] == "Visitante" and identificacao.lower() in r["identificacao"].lower()]
+    
+    return jsonify([{
+        "identificacao": v["identificacao"],
+        "nome": v["nome"],
+        "proveniencia": v.get("proveniencia", ""),
+        "contacto_visitante": v.get("contacto_visitante", ""),
+        "departamento": v.get("departamento", ""),
+        "motivo_visita": v.get("motivo_visita", ""),
+    } for v in visitantes[:10]])
+
+
 @registos_bp.route("/registar/visitante", methods=["POST"])
 def registar_visitante():
     redirecionar = _requer_login() or _requer_permissao("menu_visitante")
@@ -266,6 +303,16 @@ def registar_visitante():
             return redirect(url_for("registos.menu"))
         dados["motivo_visita"] = motivo_visita
         dados["departamento"] = departamento
+        
+        # Additional fields for visitor registration
+        dados["proveniencia"] = request.form.get("proveniencia", "").strip()
+        dados["contacto_visitante"] = request.form.get("contacto_visitante", "").strip()
+        dados["contacto_visitado"] = request.form.get("contacto_visitado", "").strip()
+        dados["funcionario_visitado"] = request.form.get("funcionario_visitado", "").strip()
+        dados["bens_declarados"] = request.form.get("bens_declarados", "").strip()
+        dados["valores_monetarios"] = request.form.get("valores_monetarios", "").strip()
+        dados["seguranca_armas"] = request.form.get("seguranca_armas", "Nenhuma Arma Detetada")
+        dados["substancias_retidas"] = request.form.get("substancias_retidas", "").strip()
 
     inserir_registo(dados)
     registrar_log(
