@@ -70,7 +70,7 @@ def get_db():
     finally:
         conn.close()
 
-def init_db():
+def init_db(app=None):
     """
     Cria as tabelas na nuvem ou localmente ajustando a sintaxe para o banco ativo.
     """
