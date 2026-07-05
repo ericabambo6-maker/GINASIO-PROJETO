@@ -285,6 +285,20 @@ def registar_visitante():
         flash(nome if not ok_nome else identificacao, "erro")
         return redirect(url_for("registos.menu"))
 
+    # Check for duplicate identification number (only for people currently inside)
+    from app.backend import BACKEND
+    with BACKEND.get_db() as conn:
+        with conn.cursor() as cursor:
+            param = "?" if BACKEND.kind == "sqlite" else "%s"
+            cursor.execute(
+                f"SELECT id FROM registos_acesso WHERE identificacao = {param} AND saida_em IS NULL",
+                (identificacao,)
+            )
+            existing = cursor.fetchone()
+            if existing:
+                flash(f"Já existe uma pessoa com o número {identificacao} dentro do edifício.", "erro")
+                return redirect(url_for("registos.menu"))
+    
     dados = {
         "tipo": "Visitante", "nome": nome, "identificacao": identificacao,
         "tipo_documento": request.form.get("tipo_documento", "BI"),
