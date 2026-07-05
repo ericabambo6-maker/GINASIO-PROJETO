@@ -440,10 +440,12 @@ function showRegistoModal(registoId) {
         .then(data => {
             let fotoHtml = '';
             if (data.foto_documento) {
+                // Extract just the filename from the path
+                const filename = data.foto_documento.split('/').pop();
                 fotoHtml = `
                     <div class="form-group">
                         <label>Foto do Documento</label>
-                        <img src="/documentos/${data.foto_documento.split('/').pop()}" alt="Foto do documento" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border);">
+                        <img src="/documentos/${filename}" alt="Foto do documento" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border);" onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('beforeend', '<p style=\'color: var(--error);\'>Foto não disponível</p>');">
                     </div>
                 `;
             }
