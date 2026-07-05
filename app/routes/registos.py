@@ -315,6 +315,7 @@ def registar_visitante():
         dados["valores_monetarios"] = request.form.get("valores_monetarios", "").strip()
         dados["seguranca_armas"] = request.form.get("seguranca_armas", "Nenhuma Arma Detetada")
         dados["substancias_retidas"] = request.form.get("substancias_retidas", "").strip()
+        dados["foto_base64"] = request.form.get("foto_base64", "").strip()
 
     inserir_registo(dados)
     registrar_log(
